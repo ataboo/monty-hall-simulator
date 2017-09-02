@@ -50,6 +50,7 @@ class Art
             $scoreStrings[] = sprintf('%s: %s (%.1d%%)', $scoreName, $scoreVal, $factor);
         }
 
+        echo "Quit by breaking with `ctrl-c`.\n";
         echo join(' | ', $scoreStrings)."\n";
     }
 

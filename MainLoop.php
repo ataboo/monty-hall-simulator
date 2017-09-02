@@ -21,6 +21,7 @@ class MainLoop
     private $controlMode = self::MANUAL;
     private $forceWait = false;
     private $doors;
+    private $nonFirstPickClosedDoor;
 
     public function run()
     {
@@ -30,7 +31,7 @@ class MainLoop
             $this->doors[] = new Door($i);
         }
 
-        $this->art = new Art($this);
+        $this->art = new Art();
 
         while (true) {
             $this->startRound();
@@ -55,6 +56,7 @@ class MainLoop
     private function firstPick()
     {
         $pickId = $this->selectFirstPickId();
+        echo "Picked door #".($pickId + 1)."\n";
 
         $this->firstPick = $this->doors[$pickId];
         $this->firstPick->isPicked = true;
@@ -87,7 +89,17 @@ class MainLoop
             return (!$door->isPicked && !$door->isCar);
         });
 
-        $goatDoorCandidates[array_rand($goatDoorCandidates)]->isOpen = true;
+        $openedDoorIndex = array_rand($goatDoorCandidates);
+        $goatDoorCandidates[$openedDoorIndex]->isOpen = true;
+
+        echo"Revealing the goat in door #".($openedDoorIndex+1)."...\n";
+
+        foreach ($this->doors as $door) {
+            if (!$door->isPicked && !$door->isOpen) {
+                $this->nonFirstPickClosedDoor = $door;
+                break;
+            }
+        }
 
         $this->art->render($this->doors);
     }
@@ -99,7 +111,8 @@ class MainLoop
         }
 
         while(true) {
-            $isSwitching = strtolower(readline('Care to switch your choice? {y or n}:'));
+            $doorNumber = $this->nonFirstPickClosedDoor->id + 1;
+            $isSwitching = strtolower(readline('Care to switch to door #'.$doorNumber.'? {y or n}:'));
 
             if ($isSwitching === 'y') {
                 return true;
@@ -118,11 +131,16 @@ class MainLoop
     {
         if($switching) {
             $this->switches++;
-            $finalPick = $this->switchFinalPick();
+            $this->firstPick->isPicked = false;
+            $finalPick = $this->nonFirstPickClosedDoor;
+            echo "Switching pick to door #".($this->nonFirstPickClosedDoor->id + 1).".\n";
         } else {
             $this->sticks++;
             $finalPick = $this->firstPick;
+            echo "Sticking with first pick: door #".($this->firstPick->id + 1).".\n";
         }
+
+        $finalPick->isPicked = true;
 
         $win = $finalPick->isCar;
 
@@ -141,19 +159,8 @@ class MainLoop
         }
 
         if ($this->waiting()) {
-            readline('[Hit a Key to Continue...]');
+            readline('[Hit Enter to Continue...]');
         }
-    }
-
-    private function switchFinalPick()
-    {
-        $nonFirstPickClosedDoor = array_values(array_filter($this->doors, function(Door $door) {
-            return !$door->isPicked && !$door->isOpen;
-        }))[0];
-
-        $this->firstPick->isPicked = false;
-        $nonFirstPickClosedDoor->isPicked = true;
-        return $nonFirstPickClosedDoor;
     }
 
     private function waiting()
