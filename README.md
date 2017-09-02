@@ -15,10 +15,10 @@ A game show has 3 doors for a contestant to choose from.  Behind 1 is a brand ne
 The debate is about whether it is better to `switch` doors or `stick` with original choice.
 
 <details> 
-  <summary>Spoilers:</summary>
+<summary><strong>Spoilers:</strong></summary>
    You should switch as sticking trends to 1 in 3 wins while switching trends to 2 in 3.
    
-   No, it's not 50/50.
+   **No, it's not 50/50.**
 </details>
 
 ### Dependancies:
