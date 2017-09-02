@@ -1,8 +1,6 @@
 <?php
 namespace Atasoft\MHS;
 
-use Atasoft\MHS\MainLoop;
-
 class Art
 {
     const DOOR_RENDERS = [
@@ -15,11 +13,11 @@ class Art
             '  |______|',
         ], [
             '  ________',
-            '||        ',
-            '||<^O=O^> ',
-            '|| |-M-|  ',
-            '|||  _  | ',
-            '|||_| |_| ',
+            '|| \___/  ',
+            '||<|O O|> ',
+            '|| |(@)|  ',
+            '|| | _ |  ',
+            '|| || ||  ',
         ], [
             '  ________',
             '||        ',
@@ -35,17 +33,9 @@ class Art
     const CAR = 2;
 
     private $lines;
-    /** @var \Atasoft\MHS\MainLoop */
-    private $loop;
 
-    public function __construct(MainLoop $loop)
+    public function renderScore($stats)
     {
-        $this->loop = $loop;
-    }
-
-    public function renderScore()
-    {
-        $stats = $this->loop->stats();
         $rounds = $stats['rounds'];
         unset($stats['rounds']);
 
@@ -63,11 +53,9 @@ class Art
         echo join(' | ', $scoreStrings)."\n";
     }
 
-    public function render()
+    public function render($doors)
     {
         echo "\n";
-        $doors = $this->loop->doors();
-
         $this->lines = [];
         $space = '      ';
         for ($line = 0; $line < count(self::DOOR_RENDERS[0]); $line++) {

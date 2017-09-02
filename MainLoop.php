@@ -1,20 +1,23 @@
 <?php
 namespace Atasoft\MHS;
 
+
 class MainLoop
 {
-    private $wins = 0;
-    private $losses = 0;
-    private $switches = 0;
-    private $sticks = 0;
-    /** @var Art */
-    private $art;
-    private $firstPick;
-    private $options;
     const MANUAL = 0;
     const AUTO_STICK = 1;
     const AUTO_SWITCH = 2;
-    private $autoPick = false;
+
+    private $wins = 0;
+    private $losses = 0;
+    private $switches = 0;
+
+    private $sticks = 0;
+    /** @var Art */
+    private $art;
+    private $options;
+    /** @var Door */
+    private $firstPick;
     private $controlMode = self::MANUAL;
     private $forceWait = false;
     private $doors;
@@ -33,13 +36,8 @@ class MainLoop
             $this->startRound();
             $this->firstPick();
             $this->openFirstGoatDoor();
-            $this->wrapUp($this->secondChoice());
+            $this->wrapUp($this->isSwitchingDoors());
         }
-    }
-
-    public function doors()
-    {
-        return $this->doors;
     }
 
     private function startRound()
@@ -50,22 +48,22 @@ class MainLoop
         }
         $this->doors[rand(0, 2)]->isCar = true;
 
-        $this->art->renderScore();
-        $this->art->render();
+        $this->art->renderScore($this->stats());
+        $this->art->render($this->doors);
     }
 
     private function firstPick()
     {
-        $pickId = $this->selectFirstPick();
+        $pickId = $this->selectFirstPickId();
 
         $this->firstPick = $this->doors[$pickId];
         $this->firstPick->isPicked = true;
 
-        $this->art->render();
+        $this->art->render($this->doors);
     }
 
-    private function selectFirstPick() {
-        if ($this->autoPick) {
+    private function selectFirstPickId() {
+        if ($this->autoPick()) {
             return rand(0, 2);
         }
 
@@ -91,55 +89,48 @@ class MainLoop
 
         $goatDoorCandidates[array_rand($goatDoorCandidates)]->isOpen = true;
 
-        $this->art->render();
+        $this->art->render($this->doors);
     }
 
-    private function secondChoice()
+    private function isSwitchingDoors()
     {
-        if ($this->controlMode == self::AUTO_SWITCH) {
-            return true;
+        if($this->autoPick()) {
+            return $this->controlMode == self::AUTO_SWITCH;
         }
 
-        if ($this->controlMode == self::AUTO_STICK) {
-            return false;
-        }
-
-        $secondChoice = null;
         while(true) {
-            $secondChoice = strtolower(readline('Care to switch your choice? {y or n}:'));
+            $isSwitching = strtolower(readline('Care to switch your choice? {y or n}:'));
 
-            $valid = $secondChoice === 'y' || $secondChoice === 'n';
-            if ($valid) {
-                break;
+            if ($isSwitching === 'y') {
+                return true;
+            }
+
+            if ($isSwitching === 'n') {
+                return false;
             }
             echo "\nTry a little harder there...\n";
         }
 
-        return $secondChoice === 'y';
+        throw new\Exception('This should not happen...how embarrassing.');
     }
 
     private function wrapUp($switching)
     {
-        $nonFirstPickClosedDoor = array_values(array_filter($this->doors, function(Door $door) {
-            return !$door->isPicked && !$door->isOpen;
-        }))[0];
-
-        if ($switching) {
-            $this->firstPick->isPicked = false;
-            $nonFirstPickClosedDoor->isPicked = true;
+        if($switching) {
             $this->switches++;
+            $finalPick = $this->switchFinalPick();
         } else {
             $this->sticks++;
+            $finalPick = $this->firstPick;
         }
 
-        $finalPick = $switching ? $nonFirstPickClosedDoor : $this->firstPick;
         $win = $finalPick->isCar;
 
         foreach ($this->doors as $door) {
             $door->isOpen = true;
         }
 
-        $this->art->render();
+        $this->art->render($this->doors);
 
         if ($win) {
             echo("Great Success!!!\n");
@@ -154,38 +145,52 @@ class MainLoop
         }
     }
 
+    private function switchFinalPick()
+    {
+        $nonFirstPickClosedDoor = array_values(array_filter($this->doors, function(Door $door) {
+            return !$door->isPicked && !$door->isOpen;
+        }))[0];
+
+        $this->firstPick->isPicked = false;
+        $nonFirstPickClosedDoor->isPicked = true;
+        return $nonFirstPickClosedDoor;
+    }
+
     private function waiting()
     {
         return $this->controlMode == self::MANUAL || $this->forceWait;
+    }
+
+    private function autoPick()
+    {
+        return $this->controlMode == self::AUTO_STICK || $this->controlMode == self::AUTO_SWITCH;
     }
 
     private function parseOptions()
     {
         $this->options = getopt('wah', [ 'switch', 'stick', 'help' ]);
 
-        if ($this->optionSet('stick')) {
+        if ($this->optionIsSet('stick')) {
             $this->controlMode = self::AUTO_STICK;
-            $this->autoPick = true;
-        } elseif ($this->optionSet('switch')) {
+        } elseif ($this->optionIsSet('switch')) {
             $this->controlMode = self::AUTO_SWITCH;
-            $this->autoPick = true;
         }
 
-        if ($this->optionSet('w')) {
+        if ($this->optionIsSet('w')) {
             $this->forceWait = true;
         }
 
-        if ($this->optionSet('h') || $this->optionSet('help')) {
+        if ($this->optionIsSet('h') || $this->optionIsSet('help')) {
             $this->dumpHelp();
         }
     }
 
-    private function optionSet($option)
+    private function optionIsSet($option)
     {
         return key_exists($option, $this->options);
     }
 
-    public function stats()
+    private function stats()
     {
         return [
             'wins' => $this->wins,
@@ -196,7 +201,7 @@ class MainLoop
         ];
     }
 
-    public function rounds()
+    private function rounds()
     {
         return $this->wins + $this->losses;
     }
@@ -220,6 +225,5 @@ class MainLoop
         echo"    -h, --help         Show this description.\n";
         die();
     }
-
 }
 ?>
