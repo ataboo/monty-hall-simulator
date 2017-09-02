@@ -1,6 +1,9 @@
 ## Monty Hall Simulator
-Simulates the classic 'Monty Hall' thought problem which can be counter-intuitive from a quick glance.
+Simulates the classic 'Monty Hall' thought problem using high powered shell graphics.
 
+![Screenshot](/monty_hall_screenshot.PNG?raw=true "Screenshot")
+
+The Monty Hall proplem can be very counter-intuitive from a quick glance.
 A game show has 3 doors for a contestant to choose from.  Behind 1 is a brand new car and the other 2 have a goat.
     - The contestant chooses one of the 3 doors
     - The host opens one of the un-chosen doors revealing a goat.
@@ -21,7 +24,7 @@ php montyhall.php [options]
 
 Or run the `montyhall.sh` script with options.
 
-###Options:
+### Options:
 Runs in manual input mode with not options.
 
 `--stick` Randomly choose the first door and switch at the last two.
