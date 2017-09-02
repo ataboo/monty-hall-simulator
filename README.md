@@ -1,7 +1,7 @@
 ## Monty Hall Simulator
 Simulates the classic 'Monty Hall' thought problem using high powered shell graphics.
 
-![Screenshot](/monty_hall_screenshot.PNG?raw=true "Screenshot")
+![Screenshot](/monty_hall_screen.PNG?raw=true "Screenshot")
 
 The Monty Hall proplem can be very counter-intuitive from a quick glance.
 A game show has 3 doors for a contestant to choose from.  Behind 1 is a brand new car and the other 2 have a goat.
