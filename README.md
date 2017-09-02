@@ -1,7 +1,7 @@
 ## Monty Hall Simulator
 Simulates the classic [Monty Hall Thought Problem](https://en.wikipedia.org/wiki/Monty_Hall_problem) using high powered shell graphics.
 
-![Screenshot](/monty_hall_screen.PNG?)
+![Screenshot](/screen_1.PNG?)
 
 The Monty Hall problem can be very counter-intuitive from a quick glance.
 
