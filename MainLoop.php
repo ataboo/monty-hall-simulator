@@ -226,8 +226,8 @@ class MainLoop
         echo"Usage:\n";
         echo"    php montyhall.php [options]\n\n";
         echo"Options:\n";
-        echo"    --stick            Randomly choose the first door and switch at the last two.\n";
-        echo"    --switch           Randomly choose the first door and stick with the original choice.\n";
+        echo"    --switch           Randomly choose the first door and switch at the last two.\n";
+        echo"    --stick            Randomly choose the first door and stick with the original choice.\n";
         echo"    -w                 Wait between rounds when automatically choosing.\n";
         echo"    -h, --help         Show this description.\n";
         die();
