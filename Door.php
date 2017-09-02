@@ -3,10 +3,6 @@ namespace Atasoft\MHS;
 
 class Door
 {
-    const YELLOW = '43';
-    const GREEN = '42';
-    const RED = '41';
-    const NONE = null;
     public $id;
     public $isCar = false;
     public $isOpen = false;
@@ -21,12 +17,12 @@ class Door
     {
         if ($this->isPicked) {
             if ($this->isOpen) {
-                $color = $this->isCar ? self::GREEN : self::RED;
+                $color = $this->isCar ? Art::GREEN : Art::RED;
             } else {
-                $color = self::YELLOW;
+                $color = Art::YELLOW;
             }
         } else {
-            $color = self::NONE;
+            $color = Art::WHITE;
         }
 
         $colorTag = "\033[".$color.'m';

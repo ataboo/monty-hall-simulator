@@ -32,6 +32,12 @@ class Art
     const GOAT = 1;
     const CAR = 2;
 
+    //Text colors
+    const YELLOW = '1;33';
+    const GREEN = '0;32';
+    const RED = '0;31';
+    const WHITE = '1;37';
+
     private $lines;
 
     public function renderScore($stats)
