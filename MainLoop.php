@@ -9,9 +9,7 @@ class MainLoop
     private $sticks = 0;
     /** @var Art */
     private $art;
-    private $carSpot;
-    private $firstChoice;
-    private $openedDoor;
+    private $firstPick;
     private $options;
     const MANUAL = 0;
     const AUTO_STICK = 1;
@@ -25,19 +23,16 @@ class MainLoop
     {
         $this->parseOptions();
 
-        $this->doors = [
-            new Door(),
-            new Door(),
-            new Door()
-        ];
+        for($i=0; $i<3; $i++) {
+            $this->doors[] = new Door($i);
+        }
 
         $this->art = new Art($this);
 
         while (true) {
             $this->startRound();
-
-            $this->openFirstGoatDoor($this->firstChoice());
-
+            $this->firstPick();
+            $this->openFirstGoatDoor();
             $this->wrapUp($this->secondChoice());
         }
     }
@@ -51,54 +46,50 @@ class MainLoop
     {
         system('clear');
         foreach ($this->doors as $door) {
-            $door->set(Art::DOOR, Door::NONE);
+            $door->reset();
         }
-        $this->carSpot = rand(0, 2);
+        $this->doors[rand(0, 2)]->isCar = true;
 
         $this->art->renderScore();
         $this->art->render();
     }
 
-    private function firstChoice()
+    private function firstPick()
     {
+        $pickId = $this->selectFirstPick();
+
+        $this->firstPick = $this->doors[$pickId];
+        $this->firstPick->isPicked = true;
+
+        $this->art->render();
+    }
+
+    private function selectFirstPick() {
         if ($this->autoPick) {
             return rand(0, 2);
         }
 
-        $firstChoice = null;
+        $pickId = null;
         while(true) {
-            $firstChoice = (int) readline('Pick a door {1, 2, 3}: ');
+            $pickId = (int) readline('Pick a door {1, 2, 3}: ');
 
-            $valid = is_int($firstChoice) && $firstChoice > 0 && $firstChoice < 4;
+            $valid = is_int($pickId) && $pickId > 0 && $pickId < 4;
             if ($valid) {
                 break;
             }
             echo "\nTry a little harder there...\n";
         }
 
-        $firstChoice-=1;
-
-        return $firstChoice;
-
+        return $pickId - 1;
     }
 
-    private function openFirstGoatDoor($firstChoice)
+    private function openFirstGoatDoor()
     {
-        $this->doors[$firstChoice]->set(Art::DOOR, Door::YELLOW);
-
-        $remainder = array_filter([ 0, 1, 2 ], function($option) use ($firstChoice) {
-            return $option != $firstChoice && $option != $this->carSpot;
+        $goatDoorCandidates = array_filter($this->doors, function(Door $door) {
+            return (!$door->isPicked && !$door->isCar);
         });
 
-        $this->openedDoor = array_rand($remainder);
-
-        $this->openDoor($this->openedDoor);
-    }
-
-    private function openDoor($doorIndex)
-    {
-        echo "\nOpening a goat door...";
-        $this->doors[$doorIndex]->set(Art::GOAT);
+        $goatDoorCandidates[array_rand($goatDoorCandidates)]->isOpen = true;
 
         $this->art->render();
     }
@@ -129,24 +120,26 @@ class MainLoop
 
     private function wrapUp($switching)
     {
-        $secondChoice = $switching ?  : $this->firstChoice;
-
-        $guessedRightFirst = $this->firstChoice == $this->carSpot;
-        $win = $guessedRightFirst != $switching;
-
-        $this->[$this->carSpot] = Art::CAR;
-
-        for($i=0; $i<count($this->doorVals); $i++) {
-            $this->doorVals[$i] = $i == $this->carSpot ? Art::CAR : Art::GOAT;
-        }
-
-        $this->art->render();
+        $nonFirstPickClosedDoor = array_values(array_filter($this->doors, function(Door $door) {
+            return !$door->isPicked && !$door->isOpen;
+        }))[0];
 
         if ($switching) {
+            $this->firstPick->isPicked = false;
+            $nonFirstPickClosedDoor->isPicked = true;
             $this->switches++;
         } else {
             $this->sticks++;
         }
+
+        $finalPick = $switching ? $nonFirstPickClosedDoor : $this->firstPick;
+        $win = $finalPick->isCar;
+
+        foreach ($this->doors as $door) {
+            $door->isOpen = true;
+        }
+
+        $this->art->render();
 
         if ($win) {
             echo("Great Success!!!\n");
@@ -168,20 +161,22 @@ class MainLoop
 
     private function parseOptions()
     {
-        $this->options = getopt('wa', [ 'switch', 'stick' ]);
+        $this->options = getopt('wah', [ 'switch', 'stick', 'help' ]);
 
         if ($this->optionSet('stick')) {
             $this->controlMode = self::AUTO_STICK;
+            $this->autoPick = true;
         } elseif ($this->optionSet('switch')) {
             $this->controlMode = self::AUTO_SWITCH;
+            $this->autoPick = true;
         }
 
         if ($this->optionSet('w')) {
             $this->forceWait = true;
         }
 
-        if ($this->optionSet('a')) {
-            $this->autoPick = true;
+        if ($this->optionSet('h') || $this->optionSet('help')) {
+            $this->dumpHelp();
         }
     }
 
@@ -190,14 +185,15 @@ class MainLoop
         return key_exists($option, $this->options);
     }
 
-    public function wins()
+    public function stats()
     {
-        return $this->wins;
-    }
-
-    public function losses()
-    {
-        return $this->losses;
+        return [
+            'wins' => $this->wins,
+            'losses' => $this->losses,
+            'rounds' => $this->rounds(),
+            'switches' => $this->switches,
+            'sticks' => $this->sticks,
+        ];
     }
 
     public function rounds()
@@ -205,15 +201,25 @@ class MainLoop
         return $this->wins + $this->losses;
     }
 
-    public function switches()
+    private function dumpHelp()
     {
-        return $this->switches;
+        echo "Simulates the classic 'Monty Hall' thought problem which can be counter-intuitive from a quick glance.\n\n";
+        echo "A game show has 3 doors for a contestant to choose from.  Behind 1 is a brand new car and the other 2 have a goat.\n";
+        echo"    - The contestant chooses one of the 3 doors\n";
+        echo"    - The host opens one of the un-chosen doors revealing a goat.\n";
+        echo"    - The contestant then has to decide if they want to stay with their original guess or switch to the other remaining closed door.\n";
+        echo"    - The last two doors are then opened to reveal if the contestant has won the car.\n\n";
+        echo"The debate is over whether it's better to `switch` doors or `stick` with the same one.\n\n";
+        echo"Runs in manual interactive mode when no options provided.\n";
+        echo"Usage:\n";
+        echo"    php montyhall.php [options]\n\n";
+        echo"Options:\n";
+        echo"    --stick            Randomly choose the first door and switch at the last two.\n";
+        echo"    --switch           Randomly choose the first door and stick with the original choice.\n";
+        echo"    -w                 Wait between rounds when automatically choosing.\n";
+        echo"    -h, --help         Show this description.\n";
+        die();
     }
 
-    public function sticks()
-    {
-        return $this->sticks;
-    }
 }
-
 ?>

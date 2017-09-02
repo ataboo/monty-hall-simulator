@@ -5,34 +5,54 @@ namespace Atasoft\MHS;
 
 class Door
 {
-    const YELLOW = '';
-    const GREEN = '';
-    const RED = '';
+    const YELLOW = '43';
+    const GREEN = '42';
+    const RED = '41';
     const NONE = null;
-    public $type = Art::DOOR;
-    public $color = self::NONE;
+    public $id;
+    public $isCar = false;
+    public $isOpen = false;
+    public $isPicked = false;
+
+    public function __construct($id)
+    {
+        $this->id = $id;
+    }
 
     public function doorRender()
     {
-        return Art::DOOR_RENDERS[$this->type];
+        $type = $this->isOpen ? ($this->isCar ? Art::CAR : Art::GOAT) : Art::DOOR;
+
+        return Art::DOOR_RENDERS[$type];
     }
 
     public function renderLine($line)
     {
+        if ($this->isPicked) {
+            if ($this->isOpen) {
+                $color = $this->isCar ? self::GREEN : self::RED;
+            } else {
+                $color = self::YELLOW;
+            }
+        } else {
+            $color = self::NONE;
+        }
+
         $render = '';
         $tail = '';
 
-        if (!is_null($this->color)) {
-            $render.=$this->color;
+        if (!is_null($color)) {
+            $render.="\033[".$color.'m';
             $tail = "\033[0m";
         }
 
         return $render.$this->doorRender()[$line].$tail;
     }
 
-    public function update($type, $color = self::NONE)
+    public function reset()
     {
-        $this->type = $type;
-        $this->color = $color;
+        $this->isCar = false;
+        $this->isOpen = false;
+        $this->isPicked = false;
     }
 }

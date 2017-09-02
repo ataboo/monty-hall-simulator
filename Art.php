@@ -45,17 +45,17 @@ class Art
 
     public function renderScore()
     {
-        $rounds = $this->loop->rounds();
+        $stats = $this->loop->stats();
+        $rounds = $stats['rounds'];
+        unset($stats['rounds']);
 
-        $scoreVals = [
-            'Wins' => $this->loop->wins(),
-            'Losses' => $this->loop->losses(),
-            'Switches' => $this->loop->switches(),
-            'Sticks' => $this->loop->sticks()
-        ];
+        $expandedStats = [];
+        foreach($stats as $key => $value) {
+            $expandedStats[ucwords($key)] = $value;
+        }
 
         $scoreStrings = [];
-        foreach ($scoreVals as $scoreName => $scoreVal) {
+        foreach ($expandedStats as $scoreName => $scoreVal) {
             $factor = $rounds == 0 ? 0 : 100 * (float)$scoreVal / (float)$rounds;
             $scoreStrings[] = sprintf('%s: %s (%.1d%%)', $scoreName, $scoreVal, $factor);
         }
