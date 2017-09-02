@@ -36,9 +36,9 @@ Or run the `montyhall.sh` script with options.
 ### Options:
 Runs in manual input mode with not options.
 
-`--stick` Randomly choose the first door and switch at the last two.
+`--switch` Randomly choose the first door and switch at the last two.
 
-`--switch` Randomly choose the first door and stick with the original choice.
+`--stick` Randomly choose the first door and stick with the original choice.
 
 `-w` Wait between rounds when automatically choosing.
 
